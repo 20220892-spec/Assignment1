@@ -1,5 +1,5 @@
 ---
-title: "Assignmant1"
+title: "Assignment1"
 author: "Hyejin Shin"
 date: "2025-10-19"
 output: html_document
@@ -113,10 +113,6 @@ xvals <- seq(0, 2*pi, length.out = 100)
 num_val <- sapply(xvals, function(x) num_diff(f, x))
 true_val <- fprime(xvals)
 
-plot(xvals, true_val, type="l", col="blue", lwd=2, ylab="f'(x)")
-lines(xvals, num_val, col="red", lty=2)
-legend("topright", legend=c("Analytical","Numerical"), col=c("blue","red"), lty=c(1,2))
-
 
 # (b)
 newton_method <- function(f, fprime = NULL, x0, maxiter = 100, h = 1e-6, eps = 1e-10) {
@@ -133,6 +129,14 @@ return(x)
 root_auto <- newton_method(f, NULL, x0=0.5)
 root_given <- newton_method(f, fprime, x0=0.5)
 root_auto; root_given
+
+png("plots/problem3.png", width=700, height=500)
+plot(xvals, true_val, type="l", col="blue", lwd=2,
+     ylab="f'(x)", main="Analytical vs Numerical")
+lines(xvals, num_val, col="red", lty=2)
+legend("topright", legend=c("Analytical","Numerical"),
+       col=c("blue","red"), lty=c(1,2))
+dev.off()
 ```
 
 ## Problem 4
@@ -173,10 +177,11 @@ library(tidyr)
 library(ggplot2)
 errs_long <- pivot_longer(errs, -n, names_to="Method", values_to="Error")
 
-ggplot(errs_long, aes(x=n, y=Error, color=Method)) +
-geom_line(size=1.2) + scale_y_log10() +
-labs(title="Integration Error Comparison", y="Absolute Error (log scale)")
-
+p4 <- ggplot(errs_long, aes(x=n, y=Error, color=Method)) +
+  geom_line(size=1.2) + scale_y_log10() +
+  labs(title="Integration Error Comparison", y="Absolute Error (log scale)")
+p4
+ggsave("plots/problem4.png", p4, width=6, height=4, dpi=300)
 ```
 
 ## Problem 5
@@ -249,5 +254,7 @@ y <- ftrue(X) + rnorm(n, sd=0.1)
 
 model <- krr_fit(X, y)
 plot.krr(model, ftrue)
+p6 <- plot.krr(model, ftrue)
+ggsave("plots/problem6.png", p6, width=6, height=4, dpi=300)
 ```
 
