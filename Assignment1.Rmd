@@ -1,0 +1,250 @@
+---
+title: "Assignmant1"
+author: "Hyejin Shin"
+date: "2025-10-19"
+output: html_document
+---
+
+## problem 1
+
+```{r}
+
+# 데이터 생성
+set.seed(1)
+n <- 200
+x <- seq(0, 1, length.out = n)
+y <- sin(2*pi*x) + rnorm(n, sd = 0.15)
+
+# (a) data/ 폴더에 csv 저장
+if(!dir.exists("data")) dir.create("data")
+df <- data.frame(x, y)
+write.csv(df, "data/data1.csv", row.names = FALSE)
+
+# (b) 산점도 + 회귀곡선 시각화
+library(ggplot2)
+p <- ggplot(df, aes(x = x, y = y)) +
+  geom_point(color = "steelblue", alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE, color = "red") +
+  labs(title = "Scatterplot with LOESS Fit",
+       x = "x", y = "y")
+
+# (c) plots/ 폴더에 저장
+if(!dir.exists("plots")) dir.create("plots")
+ggsave("plots/problem1_plot.png", p, width = 6, height = 4, dpi = 300)
+
+```
+
+
+## Problem 2
+```{r}
+# (a)
+bubble_sort <- function(x, decreasing = FALSE) {
+n <- length(x)
+for (i in 1:(n - 1)) {
+swapped <- FALSE
+for (j in 1:(n - i)) {
+if ((!decreasing && x[j] > x[j + 1]) ||
+(decreasing && x[j] < x[j + 1])) {
+tmp <- x[j]; x[j] <- x[j+1]; x[j+1] <- tmp
+swapped <- TRUE
+}
+}
+if (!swapped) break
+}
+return(x)
+}
+
+set.seed(1)
+x <- runif(10)
+bubble_sort(x)
+bubble_sort(x, decreasing = TRUE)
+
+
+# (b)
+quick_sort <- function(x, decreasing = FALSE) {
+if (length(x) <= 1) return(x)
+pivot <- x[1]
+left <- x[x < pivot]
+right <- x[x > pivot]
+equal <- x[x == pivot]
+
+if (decreasing) {
+return(c(quick_sort(right, TRUE), equal, quick_sort(left, TRUE)))
+} else {
+return(c(quick_sort(left, FALSE), equal, quick_sort(right, FALSE)))
+}
+}
+
+set.seed(1)
+x <- runif(10)
+quick_sort(x)
+quick_sort(x, decreasing = TRUE)
+
+```
+
+## Problem 3
+
+```{r}
+# (a)
+num_diff <- function(f, x, h = 1e-6, method = "central") {
+if (method == "forward") return((f(x + h) - f(x)) / h)
+if (method == "backward") return((f(x) - f(x - h)) / h)
+if (method == "central") return((f(x + h) - f(x - h)) / (2*h))
+stop("method must be forward/backward/central")
+}
+
+f <- function(x) cos(x) - x
+fprime <- function(x) -sin(x) - 1
+
+xvals <- seq(0, 2*pi, length.out = 100)
+num_val <- sapply(xvals, function(x) num_diff(f, x))
+true_val <- fprime(xvals)
+
+plot(xvals, true_val, type="l", col="blue", lwd=2,
+main="Analytical vs Numerical Derivative", ylab="f'(x)")
+lines(xvals, num_val, col="red", lty=2)
+legend("topright", legend=c("Analytical","Numerical"), col=c("blue","red"), lty=c(1,2))
+
+# (b)
+newton_method <- function(f, fprime = NULL, x0, maxiter = 100, h = 1e-6, eps = 1e-10) {
+x <- x0
+for (i in 1:maxiter) {
+fp <- if (is.null(fprime)) num_diff(f, x, h, "central") else fprime(x)
+x_new <- x - f(x) / fp
+if (abs(x_new - x) < eps) break
+x <- x_new
+}
+return(x)
+}
+
+f <- function(x) cos(x) - x
+fprime <- function(x) -sin(x) - 1
+
+root_auto <- newton_method(f, NULL, x0 = 0.5)
+root_given <- newton_method(f, fprime, x0 = 0.5)
+root_auto; root_given
+
+```
+
+## Problem 4
+```{r}
+left_rect <- function(f, a, b, n) {
+h <- (b - a) / n
+x <- seq(a, b - h, by = h)
+sum(f(x)) * h
+}
+
+trapezoid <- function(f, a, b, n) {
+h <- (b - a) / n
+x <- seq(a, b, by = h)
+y <- f(x)
+(h/2) * (y[1] + 2*sum(y[2:n]) + y[n+1])
+}
+
+simpson <- function(f, a, b, n) {
+if (n %% 2 == 1) stop("n must be even")
+h <- (b - a) / n
+x <- seq(a, b, by = h)
+y <- f(x)
+(h/3) * (y[1] + 4*sum(y[seq(2,n,2)]) + 2*sum(y[seq(3,n-1,2)]) + y[n+1])
+}
+
+f <- function(x) sin(x)
+true_val <- 2
+
+n_list <- c(10,30,60,100,150,200)
+errs <- data.frame(
+n = n_list,
+Left = sapply(n_list, function(n) abs(left_rect(f,0,pi,n)-true_val)),
+Trap = sapply(n_list, function(n) abs(trapezoid(f,0,pi,n)-true_val)),
+Simp = sapply(n_list, function(n) abs(simpson(f,0,pi,n)-true_val))
+)
+
+library(tidyr)
+library(ggplot2)
+errs_long <- pivot_longer(errs, -n, names_to="Method", values_to="Error")
+
+ggplot(errs_long, aes(x=n, y=Error, color=Method)) +
+geom_line(size=1.1) +
+scale_y_log10() +
+labs(title="Integration Error Comparison", y="Absolute Error (log scale)")
+
+```
+
+## Problem 5
+```{r}
+A <- matrix(c(4,2,2,2,5,1,2,1,3),3,3)
+L <- t(chol(A))
+round(L %*% t(L),4)  # Check
+
+forward <- function(L, b) {
+n <- length(b)
+z <- numeric(n)
+for (i in 1:n) {
+z[i] <- (b[i] - sum(L[i,1:(i-1)]*z[1:(i-1)])) / L[i,i]
+}
+return(z)
+}
+
+backward <- function(L, z) {
+  n <- length(z)
+  x <- numeric(n)
+  for (i in n:1) {
+    if (i == n) {
+      x[i] <- z[i] / L[i, i]
+    } else {
+      x[i] <- (z[i] - sum(L[(i+1):n, i] * x[(i+1):n])) / L[i, i]
+    }
+  }
+  return(x)
+}
+
+
+b <- c(1, -2, 3)
+z <- forward(L, b)
+x <- backward(L, z)
+x
+solve(A,b)  # Compare with R built-in
+
+```
+ 
+## Problem 6
+```{r}
+gaussian_kernel <- function(X1, X2, rho = 1) {
+outer(X1, X2, function(x,y) exp(-rho * (x - y)^2))
+}
+
+krr_fit <- function(X, y, lambda = 1e-4, rho = 1) {
+K <- gaussian_kernel(X, X, rho)
+alpha <- solve(K + lambda * diag(length(y)), y)
+structure(list(X=X, y=y, alpha=alpha, lambda=lambda, rho=rho), class="krr")
+}
+
+predict.krr <- function(model, X_new) {
+k <- gaussian_kernel(X_new, model$X, model$rho)
+as.numeric(k %*% model$alpha)
+}
+
+plot.krr <- function(model, ftrue = NULL) {
+X_seq <- seq(-1, 1, length.out = 200)
+y_pred <- predict(model, X_seq)
+p <- ggplot() +
+geom_point(aes(x=model$X, y=model$y), color="gray60", alpha=0.5) +
+geom_line(aes(x=X_seq, y=y_pred), color="red", size=1) +
+labs(title="Kernel Ridge Regression", x="x", y="y")
+if(!is.null(ftrue))
+p <- p + geom_line(aes(x=X_seq, y=ftrue(X_seq)), color="blue", linetype=2)
+p
+}
+
+set.seed(1)
+n <- 150
+X <- runif(n, -1, 1)
+ftrue <- function(x) sin(2*pi*x) + 0.5*cos(4*pi*x)
+y <- ftrue(X) + rnorm(n, sd=0.1)
+
+model <- krr_fit(X, y)
+plot.krr(model, ftrue)
+
+```
+
