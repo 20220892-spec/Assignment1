@@ -47,7 +47,7 @@ p <- ggplot(df, aes(x=x, y=y)) +
   geom_point(color="steelblue", alpha=0.6) +
   geom_smooth(method="loess", se=FALSE, color="red") +
   labs(title="Scatterplot with LOESS Fit", x="x", y="y")
-ggsave("plots/problem1_plot.png", p, width=6, height=4)
+ggsave("plots/problem1.png", p, width=6, height=4)
 '
 writeLines(code_text, "R/problem1.R")
 
